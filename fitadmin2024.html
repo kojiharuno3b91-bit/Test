@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitZone 健身計劃報名系統</title>
+  
+  <!-- 引入 QR Code 套件 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --red: #e94560;
+      --dark: #1a1a2e;
+      --mid: #16213e;
+      --deep: #0f3460;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f8; color: #333; }
+
+    /* ===== LANG SWITCHER ===== */
+    .lang-bar {
+      background: rgba(10,10,20,0.92);
+      backdrop-filter: blur(8px);
+      display: flex; justify-content: flex-end; align-items: center;
+      padding: 6px 24px; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .lang-btn {
+      background: transparent; border: 1px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.7); padding: 4px 14px; border-radius: 14px;
+      cursor: pointer; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.12); color: white; }
+    .lang-btn.active { background: var(--red); border-color: var(--red); color: white; font-weight: 700; }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      background: linear-gradient(135deg, var(--dark), var(--mid));
+      color: white; padding: 14px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; }
+    nav .logo span { color: var(--red); }
+    nav .nav-right { display: flex; align-items: center; gap: 12px; }
+    nav button.admin-nav-btn {
+      background: var(--red); color: white; border: none;
+      padding: 8px 20px; border-radius: 20px; cursor: pointer;
+      font-size: 0.9rem; transition: background 0.2s;
+    }
+    nav button.admin-nav-btn:hover { background: #c73652; }
+
+    /* ===== HERO with BACKGROUND ===== */
+    .hero {
+      position: relative;
+      min-height: 520px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 100px 20px 80px;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        linear-gradient(to bottom, rgba(10,10,30,0.72) 0%, rgba(10,10,30,0.55) 60%, rgba(10,10,30,0.80) 100%),
+        url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1600&q=80&fit=crop') center/cover no-repeat;
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 680px; }
+    .hero h1 { font-size: 3rem; color: white; margin-bottom: 18px; text-shadow: 0 2px 16px rgba(0,0,0,0.5); line-height: 1.2; }
+    .hero h1 span { color: var(--red); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.88); max-width: 560px; margin: 0 auto 32px; line-height: 1.8; }
+    .hero-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem;
+    }
+
+    /* ===== SECTION DIVIDER ===== */
+    .section { padding: 70px 20px; max-width: 1060px; margin: 0 auto; }
+    .section-title { text-align: center; font-size: 1.9rem; font-weight: 800; margin-bottom: 10px; color: var(--dark); }
+    .section-subtitle { text-align: center; color: #666; margin-bottom: 40px; font-size: 1rem; }
+    .divider { width: 60px; height: 4px; background: var(--red); margin: 10px auto 40px; border-radius: 2px; }
+
+    /* ===== INFO CARDS with BG IMAGES ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; }
+    .card {
+      border-radius: 18px; overflow: hidden;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+      transition: transform 0.25s, box-shadow 0.25s;
+      position: relative; min-height: 260px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 14px 36px rgba(0,0,0,0.2); }
+    .card-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background-size: cover; background-position: center;
+      transition: transform 0.4s;
+    }
+    .card:hover .card-bg { transform: scale(1.06); }
+    .card-overlay {
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(to top, rgba(10,10,30,0.88) 0%, rgba(10,10,30,0.3) 60%, transparent 100%);
+    }
+    .card-body { position: relative; z-index: 2; padding: 22px 20px; }
+    .card-icon { font-size: 2rem; margin-bottom: 8px; }
+    .card h3 { font-size: 1.05rem; color: white; margin-bottom: 6px; }
+    .card p { font-size: 0.85rem; color: rgba(255,255,255,0.8); line-height: 1.6; }
+
+    /* ===== REGISTER SECTION BG ===== */
+    .register-section {
+      position: relative; padding: 70px 20px;
+      background:
+        linear-gradient(to bottom, rgba(240,244,248,0.97), rgba(240,244,248,0.97)),
+        url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1400&q=70&fit=crop') center/cover fixed;
+    }
+
+    /* ===== FORM ===== */
+    .form-wrapper {
+      max-width: 700px; margin: 0 auto;
+      background: white; border-radius: 22px;
+      padding: 50px 44px; box-shadow: 0 10px 48px rgba(0,0,0,0.12);
+    }
+    .form-group { margin-bottom: 22px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    label { display: block; font-size: 0.88rem; font-weight: 700; color: #444; margin-bottom: 7px; }
+    label span.req { color: var(--red); }
+    input, select, textarea {
+      width: 100%; padding: 12px 16px;
+      border: 2px solid #e8ecf0; border-radius: 10px;
+      font-size: 0.95rem; transition: border-color 0.2s; outline: none;
+      font-family: inherit; background: #fafbfc;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--red); background: white; }
+    textarea { resize: vertical; min-height: 90px; }
+    .form-section-head {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; color: var(--dark);
+      font-size: 1rem; margin-bottom: 18px; margin-top: 4px;
+    }
+    .form-section-head::after {
+      content: ''; flex: 1; height: 1px; background: #e8ecf0;
+    }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+    .checkbox-item {
+      display: flex; align-items: center; gap: 8px;
+      background: #f7f9fc; padding: 8px 14px;
+      border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      border: 2px solid transparent; transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .checkbox-item input[type="checkbox"] { width: auto; accent-color: var(--red); }
+    .checkbox-item:has(input:checked) { border-color: var(--red); background: #fff0f3; }
+    .submit-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #e94560, #c73652);
+      color: white; border: none; border-radius: 12px;
+      font-size: 1.05rem; font-weight: 800; cursor: pointer;
+      margin-top: 10px; transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.5px;
+    }
+    .submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-note { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 14px; }
+
+    /* ===== SUCCESS ===== */
+    #successMsg {
+      display: none; text-align: center; padding: 50px 30px;
+      background: linear-gradient(135deg, #f0fff4, #e6ffed);
+      border-radius: 16px; border: 2px solid #38a169;
+    }
+    #successMsg .checkmark { font-size: 3.5rem; margin-bottom: 16px; }
+    #successMsg h3 { color: #276749; font-size: 1.5rem; margin-bottom: 10px; }
+    #successMsg p { color: #555; line-height: 1.7; }
+
+    /* ===== QR SECTION with BG ===== */
+    #qr-section {
+      position: relative; padding: 80px 20px; text-align: center; overflow: hidden;
+    }
+    .qr-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        linear-gradient(135deg, rgba(26,26,46,0.95) 0%, rgba(15,52,96,0.92) 100%),
+        url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1400&q=70&fit=crop') center/cover no-repeat;
+    }
+    .qr-content { position: relative; z-index: 1; }
+    #qr-section h2 { font-size: 1.9rem; color: white; margin-bottom: 10px; }
+    #qr-section p { color: rgba(255,255,255,0.72); margin-bottom: 32px; max-width: 460px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+    #qrcode {
+      display: inline-block; background: white; padding: 18px;
+      border-radius: 18px; margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    #qr-url {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px 28px; border-radius: 24px;
+      display: inline-block; font-size: 0.9rem; color: rgba(255,255,255,0.85);
+      word-break: break-all; max-width: 500px;
+    }
+    .qr-btns { margin-top: 22px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .qr-btn {
+      padding: 11px 28px; border-radius: 22px; border: none;
+      cursor: pointer; font-size: 0.92rem; font-weight: 700; transition: all 0.2s;
+    }
+    .qr-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .qr-btn-dl { background: var(--red); color: white; box-shadow: 0 4px 14px rgba(233,69,96,0.4); }
+    .qr-btn-copy { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(6px); }
+
+    /* ===== REFERENCE SECTION ===== */
+    .reference-section {
+      padding: 60px 20px; text-align: center; background: #fff;
+    }
+    .reference-section h2 { font-size: 1.8rem; color: var(--dark); margin-bottom: 12px; }
+    .reference-section p { color: #666; margin-bottom: 24px; font-size: 1rem; }
+    .download-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--dark); color: white; padding: 14px 32px;
+      border-radius: 30px; text-decoration: none; font-size: 1.05rem; font-weight: 700;
+      transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    .download-link:hover {
+      background: var(--red); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(233,69,96,0.3);
+    }
+
+    /* ===== ADMIN MODAL ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 999;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: white; border-radius: 22px; padding: 44px;
+      width: 95%; max-width: 960px; max-height: 92vh; overflow-y: auto;
+      position: relative; box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    }
+    .modal-close {
+      position: absolute; top: 18px; right: 22px;
+      font-size: 1.4rem; background: #f0f4f8; border: none;
+      cursor: pointer; color: #777; border-radius: 50%; width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .admin-login { max-width: 380px; margin: 0 auto; text-align: center; }
+    .admin-login .lock-icon { font-size: 3rem; margin-bottom: 16px; }
+    .admin-login h2 { margin-bottom: 6px; color: var(--dark); font-size: 1.5rem; }
+    .admin-login p { color: #888; margin-bottom: 28px; font-size: 0.92rem; }
+    .admin-login input {
+      margin-bottom: 16px; text-align: center; letter-spacing: 4px; font-size: 1.1rem;
+    }
+    .admin-login button {
+      width: 100%; padding: 14px; background: var(--dark); color: white;
+      border: none; border-radius: 12px; font-size: 1rem;
+      font-weight: 800; cursor: pointer; transition: background 0.2s;
+    }
+    .admin-login button:hover { background: var(--deep); }
+    .admin-login .err { color: var(--red); font-size: 0.85rem; margin-top: 10px; }
+    #adminDash { display: none; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .admin-header h2 { color: var(--dark); font-size: 1.4rem; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: linear-gradient(135deg, #f7f9fc, #eef1f6);
+      border-radius: 14px; padding: 20px 16px; text-align: center;
+      border: 1px solid #e8ecf0;
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 900; color: var(--red); }
+    .stat-card .lbl { font-size: 0.78rem; color: #888; margin-top: 4px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th { background: var(--dark); color: white; padding: 12px 10px; text-align: left; font-size: 0.8rem; }
+    th:first-child { border-radius: 8px 0 0 0; }
+    th:last-child { border-radius: 0 8px 0 0; }
+    td { padding: 11px 10px; border-bottom: 1px solid #eef1f6; vertical-align: top; }
+    tr:hover td { background: #fafbfd; }
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 0.76rem; font-weight: 700; margin: 2px;
+    }
+    .tag-goal { background: #e8f4fd; color: #2980b9; }
+    .tag-diet { background: #fef9e7; color: #e67e22; }
+    .tag-allergy { background: #fce8e8; color: #e74c3c; }
+    .export-btn {
+      background: #27ae60; color: white; border: none;
+      padding: 10px 22px; border-radius: 10px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 700; transition: background 0.2s;
+    }
+    .export-btn:hover { background: #219a52; }
+    .empty-state { text-align: center; padding: 48px; color: #bbb; font-size: 1rem; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .form-wrapper { padding: 30px 20px; }
+      .hero h1 { font-size: 2rem; }
+      nav .logo { font-size: 1.1rem; }
+      .modal { padding: 28px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LANG BAR -->
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('zh')" id="btn-zh">繁體中文</button>
+  <button class="lang-btn" onclick="setLang('en')" id="btn-en">English</button>
+  <button class="lang-btn" onclick="setLang('ja')" id="btn-ja">日本語</button>
+</div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo">💪 Fit<span>Zone</span></div>
+  <div class="nav-right">
+    <button class="admin-nav-btn" onclick="openAdmin()" data-i18n="nav_admin">管理後台</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <h1 data-i18n-html="hero_title">專屬您的<span>健身計劃</span></h1>
+    <p data-i18n="hero_subtitle">填寫您的個人資料與飲食習慣，我們將為您制定最合適的健身方案，幫助您達成目標。</p>
+    <div class="hero-badges">
+      <span class="badge" data-i18n="badge_personal_training">🏃 個人化訓練</span>
+      <span class="badge" data-i18n="badge_diet_planning">🥗 飲食規劃</span>
+      <span class="badge" data-i18n="badge_progress_tracking">📊 進度追蹤</span>
+      <span class="badge" data-i18n="badge_pro_support">👥 專業支援</span>
+    </div>
+  </div>
+</div>
+
+<!-- WHY FITZONE -->
+<div class="section">
+  <h2 class="section-title" data-i18n="section_why_title">為何選擇 FitZone？</h2>
+  <div class="divider"></div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-bg" style="background-image: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80&fit=crop')"></div>
+      <div class="card-overlay"></div>
+      <div class="card-body">
+        <div class="card-icon">🎯</div>
+        <h3 data-i18n="card1_title">量身訂制目標</h3>
+        <p data-i18n="card1_desc">根據您的身體狀況、生活習慣與健身目標，制定個人化的專屬計劃。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-bg" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80&fit=crop')"></div>
+      <div class="card-overlay"></div>
+      <div class="card-body">
+        <div class="card-icon">🥦</div>
+        <h3 data-i18n="card2_title">飲食與訓練結合</h3>
+        <p data-i18n="card2_desc">科學搭配飲食與運動，考量您的飲食偏好，讓健身成效事半功倍。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-bg" style="background-image: url('https://images.unsplash.com/photo-1550345332-09e3ac987658?w=600&q=80&fit=crop')"></div>
+      <div class="card-overlay"></div>
+      <div class="card-body">
+        <div class="card-icon">📱</div>
+        <h3 data-i18n="card3_title">即時資訊追蹤</h3>
+        <p data-i18n="card3_desc">管理員即時掌握所有參加者資料，輕鬆統計與分析。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-bg" style="background-image: url('https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=600&q=80&fit=crop')"></div>
+      <div class="card-overlay"></div>
+      <div class="card-body">
+        <div class="card-icon">🔒</div>
+        <h3 data-i18n="card4_title">安全私密保護</h3>
+        <p data-i18n="card4_desc">您的個人資料受到嚴格保護，僅限授權管理人員查閱。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER FORM -->
+<div class="register-section">
+  <h2 class="section-title" data-i18n="form_title">立即報名</h2>
+  <p class="section-subtitle" data-i18n="form_subtitle">請填寫以下資料，讓我們更了解您的需求</p>
+  <div class="divider"></div>
+
+  <div class="form-wrapper">
+    <div id="successMsg">
+      <div class="checkmark">✅</div>
+      <h3 data-i18n="success_title">報名成功！</h3>
+      <p data-i18n="success_message">感謝您的填寫，我們將盡快與您聯絡，為您安排專屬健身計劃。</p>
+    </div>
+
+    <form id="regForm" onsubmit="submitForm(event)">
+
+      <!-- Basic Info -->
+      <div class="form-section-head">📋 <span data-i18n="section_basic">基本資料</span></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label><span data-i18n="label_name">姓名</span> <span class="req">*</span></label>
+          <input type="text" id="f_name" required data-i18n-placeholder="placeholder_name" placeholder="請輸入您的姓名" />
+        </div>
+        <div class="form-group">
+          <label><span data-i18n="label_gender">性別</span> <span class="req">*</span></label>
+          <select id="f_gender" required>
+            <option value="" data-i18n="select_default_gender">請選擇</option>
+            <option value="male" data-i18n="gender_male">男</option>
+            <option value="female" data-i18n="gender_female">女</option>
+            <option value="other" data-i18n="gender_other">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label><span data-i18n="label_age">年齡</span> <span class="req">*</span></label>
+          <input type="number" id="f_age" min="10" max="100" required data-i18n-placeholder="placeholder_age" placeholder="歲" />
+        </div>
+        <div class="form-group">
+          <label><span data-i18n="label_phone">聯絡電話</span> <span class="req">*</span></label>
+          <input type="tel" id="f_phone" required data-i18n-placeholder="placeholder_phone" placeholder="09xx-xxx-xxx" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_email">電子郵件</span></label>
+        <input type="email" id="f_email" data-i18n-placeholder="placeholder_email" placeholder="example@email.com" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label><span data-i18n="label_height">身高</span> (cm) <span class="req">*</span></label>
+          <input type="number" id="f_height" min="100" max="250" required data-i18n-placeholder="placeholder_height" placeholder="170" />
+        </div>
+        <div class="form-group">
+          <label><span data-i18n="label_weight">體重</span> (kg) <span class="req">*</span></label>
+          <input type="number" id="f_weight" min="20" max="300" required data-i18n-placeholder="placeholder_weight" placeholder="65" />
+        </div>
+      </div>
+
+      <!-- Fitness Goals -->
+      <div class="form-section-head">🎯 <span data-i18n="section_goals">健身目標</span></div>
+      <div class="form-group">
+        <div class="checkbox-group" id="goals">
+          <label class="checkbox-item"><input type="checkbox" value="goal_weight_loss" /> <span data-i18n="goal_weight_loss">減重塑形</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="goal_muscle_gain" /> <span data-i18n="goal_muscle_gain">增肌訓練</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="goal_fitness" /> <span data-i18n="goal_fitness">提升體能</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="goal_posture" /> <span data-i18n="goal_posture">改善姿勢</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="goal_stress" /> <span data-i18n="goal_stress">舒緩壓力</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="goal_health" /> <span data-i18n="goal_health">維持健康</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_exercise_freq">目前運動習慣</span> <span class="req">*</span></label>
+        <select id="f_exercise" required>
+          <option value="" data-i18n="select_default_exercise">請選擇</option>
+          <option value="exercise_none" data-i18n="exercise_none">幾乎不運動</option>
+          <option value="exercise_occasional" data-i18n="exercise_occasional">偶爾運動</option>
+          <option value="exercise_regular" data-i18n="exercise_regular">規律運動</option>
+          <option value="exercise_intense" data-i18n="exercise_intense">高強度訓練</option>
+        </select>
+      </div>
+
+      <!-- Diet Habits -->
+      <div class="form-section-head">🥗 <span data-i18n="section_diet">飲食習慣</span></div>
+      <div class="form-group">
+        <label><span data-i18n="label_diet_type">飲食類型</span> <span class="req">*</span></label>
+        <select id="f_diet" required>
+          <option value="" data-i18n="select_default_diet">請選擇</option>
+          <option value="diet_balanced" data-i18n="diet_balanced">均衡飲食</option>
+          <option value="diet_vegetarian" data-i18n="diet_vegetarian">素食</option>
+          <option value="diet_vegan" data-i18n="diet_vegan">全素</option>
+          <option value="diet_keto" data-i18n="diet_keto">生酮</option>
+          <option value="diet_low_carb" data-i18n="diet_low_carb">低碳</option>
+          <option value="diet_high_protein" data-i18n="diet_high_protein">高蛋白</option>
+          <option value="diet_mediterranean" data-i18n="diet_mediterranean">地中海</option>
+          <option value="diet_none" data-i18n="diet_none">無特定</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_meals_per_day">每日進餐次數</span></label>
+        <select id="f_meals">
+          <option value="" data-i18n="select_default_meals">請選擇</option>
+          <option value="meals_2" data-i18n="meals_2">2 餐</option>
+          <option value="meals_3" data-i18n="meals_3">3 餐</option>
+          <option value="meals_4plus" data-i18n="meals_4plus">4 餐以上</option>
+          <option value="meals_irregular" data-i18n="meals_irregular">不固定</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_allergies">食物過敏</span></label>
+        <div class="checkbox-group">
+          <label class="checkbox-item"><input type="checkbox" value="allergy_gluten" /> <span data-i18n="allergy_gluten">麩質</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="allergy_lactose" /> <span data-i18n="allergy_lactose">乳糖</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="allergy_nuts" /> <span data-i18n="allergy_nuts">堅果</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="allergy_seafood" /> <span data-i18n="allergy_seafood">海鮮</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="allergy_eggs" /> <span data-i18n="allergy_eggs">蛋</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="allergy_none" /> <span data-i18n="allergy_none">無</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_supplements">營養補充品</span></label>
+        <div class="checkbox-group">
+          <label class="checkbox-item"><input type="checkbox" value="supp_protein" /> <span data-i18n="supp_protein">蛋白粉</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="supp_vitamins" /> <span data-i18n="supp_vitamins">維他命</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="supp_fish_oil" /> <span data-i18n="supp_fish_oil">魚油</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="supp_creatine" /> <span data-i18n="supp_creatine">肌酸</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="supp_none" /> <span data-i18n="supp_none">未使用</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label><span data-i18n="label_notes">備注</span></label>
+        <textarea id="f_note" data-i18n-placeholder="placeholder_notes" placeholder="其他備注或特殊需求..."></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" data-i18n="btn_submit">🚀 提交報名資料</button>
+      <p class="form-note">🔒 <span data-i18n="privacy_note">您的個人資料將被嚴格保密，僅供健身計劃使用</span></p>
+    </form>
+  </div>
+</div>
+
+<!-- QR SECTION -->
+<div id="qr-section">
+  <div class="qr-bg"></div>
+  <div class="qr-content">
+    <h2 data-i18n="qr_title">📱 掃描 QR Code 進入報名</h2>
+    <p data-i18n="qr_desc">將此二維碼分享給參加者，他們可直接掃描進入本頁面填寫資料</p>
+    <div id="qrcode"></div>
+    <div id="qr-url">載入中...</div>
+    <div class="qr-btns">
+      <button class="qr-btn qr-btn-dl" onclick="downloadQR()" data-i18n="btn_download_qr">⬇️ 下載 QR Code</button>
+      <button class="qr-btn qr-btn-copy" onclick="copyURL()" data-i18n="btn_copy_url">📋 複製網址</button>
+    </div>
+  </div>
+</div>
+
+<!-- REFERENCE SECTION -->
+<div class="reference-section">
+  <h2 data-i18n="ref_title">參考資料</h2>
+  <p data-i18n="ref_desc">點擊下方連結下載我們的最新宣傳海報與價目表</p>
+  <a href="https://ibb.co/mr9Cghht" onclick="forceDownload(event, this.href, 'FitZone_宣傳海報.jpg')" class="download-link">
+    ⬇️ <span data-i18n="ref_link">參考資料</span>
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p data-i18n="footer_text">© 2026 FitZone 健身計劃系統　｜　由管理員建立並維護</p>
+</footer>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAdmin()">✕</button>
+    <div id="adminLogin" class="admin-login">
+      <div class="lock-icon">🔐</div>
+      <h2 data-i18n="admin_login_title">管理員登入</h2>
+      <p data-i18n="admin_password_label">請輸入管理員密碼以進入後台</p>
+      <input type="password" id="pwInput" data-i18n-placeholder="admin_password_placeholder" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')checkPW()" />
+      <button onclick="checkPW()" data-i18n="admin_login_btn">登入後台</button>
+      <p class="err" id="pwErr"></p>
+    </div>
+    <div id="adminDash">
+      <div class="admin-header">
+        <h2 data-i18n="admin_panel_title">📊 管理後台</h2>
+        <button class="export-btn" onclick="exportCSV()" data-i18n="btn_export_csv">⬇️ 匯出 CSV</button>
+      </div>
+      <div class="stat-cards" id="statCards"></div>
+      <div style="overflow-x:auto;">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th data-i18n="th_index">#</th>
+              <th data-i18n="th_name">姓名</th>
+              <th data-i18n="th_gender">性別</th>
+              <th data-i18n="th_age">年齡</th>
+              <th data-i18n="th_phone">電話</th>
+              <th data-i18n="th_height_weight">身高/體重</th>
+              <th data-i18n="th_goals">目標</th>
+              <th data-i18n="th_diet_type">飲食</th>
+              <th data-i18n="th_allergies">過敏</th>
+              <th data-i18n="th_notes">備注</th>
+              <th data-i18n="th_registered_at">報名時間</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SCRIPTS (使用 type="module") ===================== -->
+<script type="module">
+  // 引入 Firebase 模組
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+  // 您專屬的 Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCUv_I0oW5CWYNt9RjKOcQXje3abdgWUBA",
+    authDomain: "fitzone-12206.firebaseapp.com",
+    projectId: "fitzone-12206",
+    storageBucket: "fitzone-12206.firebasestorage.app",
+    messagingSenderId: "150353617839",
+    appId: "1:150353617839:web:641833d358bb0e6c34455a",
+    measurementId: "G-MNJWFV9X1W"
+  };
+
+  // 初始化 Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getFirestore(app);
+
+  // ======================================================
+  // i18n TRANSLATIONS
+  // ======================================================
+  const i18n = {
+    zh: {
+      nav_admin:'管理後台', hero_title:'專屬您的<span style="color:var(--red)">健身計劃</span>',
+      hero_subtitle:'填寫您的個人資料與飲食習慣，我們將為您量身打造最適合的健身與飲食方案，開啟您的健康新旅程。',
+      badge_personal_training:'🏃 個人化訓練', badge_diet_planning:'🥗 飲食規劃',
+      badge_progress_tracking:'📊 進度追蹤', badge_pro_support:'👥 專業支援',
+      section_why_title:'為何選擇 FitZone？',
+      card1_title:'量身訂制目標', card1_desc:'根據您的身體狀況、生活習慣與健身目標，制定個人化的專屬計劃。',
+      card2_title:'飲食與訓練結合', card2_desc:'科學搭配飲食與運動，考量您的飲食偏好，讓健身成效事半功倍。',
+      card3_title:'即時資訊追蹤', card3_desc:'管理員即時掌握所有參加者資料，輕鬆統計與分析。',
+      card4_title:'安全私密保護', card4_desc:'您的個人資料受到嚴格保護，僅限授權管理人員查閱。',
+      form_title:'立即報名', form_subtitle:'請填寫以下資料，讓我們更了解您的需求',
+      section_basic:'📋 基本資料', section_goals:'🎯 健身目標', section_diet:'🥗 飲食習慣',
+      label_name:'姓名', label_gender:'性別', label_age:'年齡', label_phone:'聯絡電話',
+      label_email:'電子郵件', label_height:'身高', label_weight:'體重',
+      label_exercise_freq:'目前運動習慣', label_diet_type:'飲食類型',
+      label_meals_per_day:'每日進餐次數', label_allergies:'食物過敏', label_supplements:'營養補充品', label_notes:'備注',
+      select_default_gender:'請選擇性別', select_default_exercise:'請選擇運動習慣',
+      select_default_diet:'請選擇飲食類型', select_default_meals:'請選擇餐數',
+      gender_male:'男', gender_female:'女', gender_other:'其他',
+      goal_weight_loss:'減重塑形', goal_muscle_gain:'增肌訓練', goal_fitness:'提升體能',
+      goal_posture:'改善姿勢', goal_stress:'舒緩壓力', goal_health:'維持健康',
+      exercise_none:'幾乎不運動', exercise_occasional:'偶爾運動（每週 1 次以下）',
+      exercise_regular:'規律運動（每週 2–3 次）', exercise_intense:'高強度訓練（每週 4 次以上）',
+      diet_balanced:'均衡飲食', diet_vegetarian:'素食（蛋奶素）', diet_vegan:'全素食',
+      diet_keto:'生酮飲食', diet_low_carb:'低碳飲食', diet_high_protein:'高蛋白飲食',
+      diet_mediterranean:'地中海飲食', diet_none:'無特定飲食',
+      meals_2:'2 餐', meals_3:'3 餐', meals_4plus:'4 餐以上', meals_irregular:'不固定',
+      allergy_gluten:'麩質', allergy_lactose:'乳糖', allergy_nuts:'堅果',
+      allergy_seafood:'海鮮', allergy_eggs:'蛋', allergy_none:'無',
+      supp_protein:'蛋白粉', supp_vitamins:'維他命', supp_fish_oil:'魚油',
+      supp_creatine:'肌酸', supp_none:'未使用',
+      btn_submit:'🚀 提交報名資料', btn_admin:'管理後台',
+      btn_download_qr:'⬇️ 下載 QR Code', btn_copy_url:'📋 複製網址',
+      btn_export_csv:'⬇️ 匯出 CSV',
+      success_title:'報名成功！', success_message:'感謝您的填寫！我們已收到您的資料，將盡快為您安排專屬健身計劃。',
+      admin_login_title:'管理員登入', admin_password_label:'請輸入管理員密碼以進入後台',
+      admin_password_placeholder:'輸入密碼', admin_login_btn:'登入後台',
+      admin_panel_title:'📊 管理後台', admin_error_password:'❌ 密碼錯誤，請重試',
+      stat_total:'總報名人數', stat_top_goal:'最熱門目標', stat_top_diet:'最常見飲食',
+      stat_male_count:'男性人數', stat_female_count:'女性人數',
+      th_index:'#', th_name:'姓名', th_gender:'性別', th_age:'年齡', th_phone:'電話',
+      th_height_weight:'身高/體重', th_goals:'目標', th_diet_type:'飲食',
+      th_allergies:'過敏', th_notes:'備注', th_registered_at:'報名時間',
+      qr_title:'📱 掃描 QR Code 進入報名', qr_desc:'將此二維碼分享給參加者，他們可直接掃描進入本頁面填寫資料',
+      footer_text:'© 2026 FitZone 健身計劃系統　｜　由管理員建立並維護',
+      privacy_note:'🔒 您的個人資料將被嚴格保密，僅供健身計劃使用',
+      placeholder_name:'請輸入您的姓名', placeholder_age:'歲', placeholder_phone:'09xx-xxx-xxx',
+      placeholder_email:'example@email.com', placeholder_height:'例：170', placeholder_weight:'例：65',
+      placeholder_notes:'其他備注或特殊需求（選填）...', admin_password_placeholder:'輸入管理員密碼',
+      empty_data:'📭 尚無報名資料',
+      ref_title:'參考資料', ref_desc:'點擊下方連結下載我們的最新宣傳海報與價目表', ref_link:'參考資料'
+    },
+    en: {
+      nav_admin:'Admin Panel', hero_title:'Your Personalized <span style="color:var(--red)">Fitness Plan</span>',
+      hero_subtitle:'Fill in your personal details and dietary habits. We will craft the perfect fitness and nutrition plan tailored just for you. Start your healthy new journey today.',
+      badge_personal_training:'🏃 Personal Training', badge_diet_planning:'🥗 Diet Planning',
+      badge_progress_tracking:'📊 Progress Tracking', badge_pro_support:'👥 Expert Support',
+      section_why_title:'Why Choose FitZone?',
+      card1_title:'Customized Goals', card1_desc:'We build personalized fitness goals and training plans based on your body condition and lifestyle.',
+      card2_title:'Diet & Training Combined', card2_desc:'We seamlessly integrate nutritional advice with training programs to deliver comprehensive health management.',
+      card3_title:'Real-Time Tracking', card3_desc:'Monitor training progress and body metrics at any time, keeping your fitness results clearly in view.',
+      card4_title:'Secure & Private', card4_desc:'Your personal information is strictly protected, ensuring complete data security and privacy.',
+      form_title:'Register Now', form_subtitle:'Fill in the details below to begin your fitness journey',
+      section_basic:'📋 Basic Information', section_goals:'🎯 Fitness Goals', section_diet:'🥗 Dietary Habits',
+      label_name:'Full Name', label_gender:'Gender', label_age:'Age', label_phone:'Phone Number',
+      label_email:'Email Address', label_height:'Height', label_weight:'Weight',
+      label_exercise_freq:'Exercise Frequency', label_diet_type:'Diet Type',
+      label_meals_per_day:'Meals Per Day', label_allergies:'Food Allergies', label_supplements:'Supplements', label_notes:'Notes',
+      select_default_gender:'Select gender', select_default_exercise:'Select exercise frequency',
+      select_default_diet:'Select diet type', select_default_meals:'Select meals per day',
+      gender_male:'Male', gender_female:'Female', gender_other:'Other / Prefer not to say',
+      goal_weight_loss:'Weight Loss & Toning', goal_muscle_gain:'Muscle Building', goal_fitness:'Improve Fitness',
+      goal_posture:'Better Posture', goal_stress:'Stress Relief', goal_health:'Maintain Health',
+      exercise_none:'Barely Active', exercise_occasional:'Occasionally (under 1x/week)',
+      exercise_regular:'Regularly (2–3x/week)', exercise_intense:'High-Intensity (4+x/week)',
+      diet_balanced:'Balanced Diet', diet_vegetarian:'Vegetarian', diet_vegan:'Vegan',
+      diet_keto:'Ketogenic', diet_low_carb:'Low Carb', diet_high_protein:'High Protein',
+      diet_mediterranean:'Mediterranean', diet_none:'No Specific Diet',
+      meals_2:'2 Meals', meals_3:'3 Meals', meals_4plus:'4+ Meals', meals_irregular:'Irregular',
+      allergy_gluten:'Gluten', allergy_lactose:'Lactose', allergy_nuts:'Nuts',
+      allergy_seafood:'Seafood', allergy_eggs:'Eggs', allergy_none:'None',
+      supp_protein:'Protein Powder', supp_vitamins:'Vitamins', supp_fish_oil:'Fish Oil',
+      supp_creatine:'Creatine', supp_none:'Not Using',
+      btn_submit:'🚀 Submit Registration', btn_admin:'Admin Panel',
+      btn_download_qr:'⬇️ Download QR Code', btn_copy_url:'📋 Copy URL',
+      btn_export_csv:'⬇️ Export CSV',
+      success_title:'Registration Successful!', success_message:'Thank you for registering! We have received your details and will contact you soon to arrange your personalized fitness plan.',
+      admin_login_title:'Admin Login', admin_password_label:'Enter admin password to access the panel',
+      admin_password_placeholder:'Enter password', admin_login_btn:'Log In',
+      admin_panel_title:'📊 Admin Dashboard', admin_error_password:'❌ Incorrect password, please try again',
+      stat_total:'Total Registrations', stat_top_goal:'Top Goal', stat_top_diet:'Top Diet',
+      stat_male_count:'Male Count', stat_female_count:'Female Count',
+      th_index:'#', th_name:'Name', th_gender:'Gender', th_age:'Age', th_phone:'Phone',
+      th_height_weight:'Height/Weight', th_goals:'Goals', th_diet_type:'Diet',
+      th_allergies:'Allergies', th_notes:'Notes', th_registered_at:'Registered At',
+      qr_title:'📱 Scan QR Code to Register', qr_desc:'Share this QR Code with participants so they can scan and fill in their details directly',
+      footer_text:'© 2026 FitZone Fitness System　｜　Created and maintained by Admin',
+      privacy_note:'🔒 Your personal data is strictly protected and used solely for fitness planning purposes',
+      placeholder_name:'Enter your full name', placeholder_age:'years', placeholder_phone:'+1-xxx-xxx-xxxx',
+      placeholder_email:'example@email.com', placeholder_height:'e.g. 170', placeholder_weight:'e.g. 65',
+      placeholder_notes:'Additional notes or special requirements (optional)...', admin_password_placeholder:'Enter admin password',
+      empty_data:'📭 No registration data yet',
+      ref_title:'Reference Material', ref_desc:'Click the link below to download our latest promotional poster and pricing plans', ref_link:'Reference Material'
+    },
+    ja: {
+      nav_admin:'管理パネル', hero_title:'あなた専用の<span style="color:var(--red)">フィットネスプラン</span>',
+      hero_subtitle:'個人情報と食習慣をご入力ください。あなたの体と生活に合わせた最適なフィットネス・栄養プランを作成します。',
+      badge_personal_training:'🏃 パーソナルトレーニング', badge_diet_planning:'🥗 食事プランニング',
+      badge_progress_tracking:'📊 進捗管理', badge_pro_support:'👥 専門家サポート',
+      section_why_title:'FitZoneを選ぶ理由',
+      card1_title:'カスタマイズされた目標', card1_desc:'あなたの体の状態と生活習慣に基づき、専用のフィットネス目標とトレーニングプランを作成します。',
+      card2_title:'食事とトレーニングの融合', card2_desc:'栄養アドバイスとトレーニングプログラムを統合し、包括的な健康管理サービスを提供します。',
+      card3_title:'リアルタイム進捗追跡', card3_desc:'いつでもトレーニングの進捗と体のデータを確認でき、フィットネスの成果を明確に把握できます。',
+      card4_title:'安全でプライベートな保護', card4_desc:'個人情報は厳重に保護され、データのセキュリティとプライバシーを完全に確保します。',
+      form_title:'今すぐ登録', form_subtitle:'以下の情報を入力して、フィットネスの旅を始めましょう',
+      section_basic:'📋 基本情報', section_goals:'🎯 フィットネス目標', section_diet:'🥗 食習慣',
+      label_name:'氏名', label_gender:'性別', label_age:'年齢', label_phone:'電話番号',
+      label_email:'メールアドレス', label_height:'身長', label_weight:'体重',
+      label_exercise_freq:'運動頻度', label_diet_type:'食事タイプ',
+      label_meals_per_day:'1日の食事回数', label_allergies:'食物アレルギー', label_supplements:'サプリメント', label_notes:'備考',
+      select_default_gender:'性別を選択', select_default_exercise:'運動頻度を選択',
+      select_default_diet:'食事タイプを選択', select_default_meals:'食事回数を選択',
+      gender_male:'男性', gender_female:'女性', gender_other:'その他',
+      goal_weight_loss:'減量・ボディシェイプ', goal_muscle_gain:'筋力増強トレーニング', goal_fitness:'体力・持久力向上',
+      goal_posture:'姿勢改善', goal_stress:'ストレス解消', goal_health:'健康維持',
+      exercise_none:'ほとんど運動しない', exercise_occasional:'時々運動する（週1回未満）',
+      exercise_regular:'定期的に運動する（週2〜3回）', exercise_intense:'高強度トレーニング（週4回以上）',
+      diet_balanced:'バランス食', diet_vegetarian:'ベジタリアン', diet_vegan:'ヴィーガン',
+      diet_keto:'ケトジェニック', diet_low_carb:'低炭水化物', diet_high_protein:'高タンパク質',
+      diet_mediterranean:'地中海式', diet_none:'特定なし',
+      meals_2:'1日2食', meals_3:'1日3食', meals_4plus:'1日4食以上', meals_irregular:'不規則',
+      allergy_gluten:'グルテン', allergy_lactose:'乳糖（ラクトース）', allergy_nuts:'ナッツ類',
+      allergy_seafood:'海鮮', allergy_eggs:'卵', allergy_none:'なし',
+      supp_protein:'プロテインパウダー', supp_vitamins:'ビタミン', supp_fish_oil:'フィッシュオイル',
+      supp_creatine:'クレアチン', supp_none:'使用していない',
+      btn_submit:'🚀 登録情報を送信', btn_admin:'管理パネル',
+      btn_download_qr:'⬇️ QRコードをダウンロード', btn_copy_url:'📋 URLをコピー',
+      btn_export_csv:'⬇️ CSVエクスポート',
+      success_title:'登録完了！', success_message:'ご登録いただきありがとうございます！情報を受け取りました。専門コンサルタントがすぐにご連絡いたします。',
+      admin_login_title:'管理者ログイン', admin_password_label:'管理者パネルにアクセスするためパスワードを入力してください',
+      admin_password_placeholder:'パスワードを入力', admin_login_btn:'ログイン',
+      admin_panel_title:'📊 管理ダッシュボード', admin_error_password:'❌ パスワードが間違っています。再度お試しください',
+      stat_total:'総登録者数', stat_top_goal:'最人気目標', stat_top_diet:'最多食事タイプ',
+      stat_male_count:'男性登録者数', stat_female_count:'女性登録者数',
+      th_index:'#', th_name:'氏名', th_gender:'性別', th_age:'年齢', th_phone:'電話番号',
+      th_height_weight:'身長/体重', th_goals:'目標', th_diet_type:'食事',
+      th_allergies:'アレルギー', th_notes:'備考', th_registered_at:'登録日時',
+      qr_title:'📱 QRコードをスキャンして登録', qr_desc:'このQRコードを参加者に共有すると、スキャンするだけで直接登録ページにアクセスできます',
+      footer_text:'© 2026 FitZone フィットネスシステム　｜　管理者が作成・管理',
+      privacy_note:'🔒 個人情報は厳重に保護され、フィットネスプランの目的のみに使用されます',
+      placeholder_name:'氏名を入力してください', placeholder_age:'歳', placeholder_phone:'090-xxxx-xxxx',
+      placeholder_email:'example@email.com', placeholder_height:'例：170', placeholder_weight:'例：65',
+      placeholder_notes:'その他の備考や特別なご要望（任意）...', admin_password_placeholder:'管理者パスワードを入力',
+      empty_data:'📭 まだ登録データがありません',
+      ref_title:'参考資料', ref_desc:'以下のリンクをクリックして、最新のプロモーションポスターと料金表をダウンロードしてください', ref_link:'参考資料'
+    }
+  };
+
+  let currentLang = 'zh';
+
+  function t(key) {
+    return i18n[currentLang][key] || key; 
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    ['zh','en','ja'].forEach(l => {
+      document.getElementById('btn-'+l).classList.toggle('active', l === lang);
+    });
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : lang;
+    applyTranslations();
+  }
+
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      el.innerHTML = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.placeholder = t(key);
+    });
+    document.querySelectorAll('select option[data-i18n]').forEach(opt => {
+      const key = opt.getAttribute('data-i18n');
+      opt.textContent = t(key);
+    });
+    document.querySelectorAll('.checkbox-item span[data-i18n]').forEach(span => {
+      const key = span.getAttribute('data-i18n');
+      span.textContent = t(key);
+    });
+  }
+
+  // ======================================================
+  // DATA STORE & FIREBASE
+  // ======================================================
+  const ADMIN_PW  = 'fitadmin2024';
+  let cachedData = [];
+
+  async function submitForm(e) {
+    e.preventDefault();
+    const getCheckedVals = (containerSelector) =>
+      [...document.querySelectorAll(containerSelector + ' input[type="checkbox"]:checked')].map(i => i.value);
+
+    const record = {
+      id:          Date.now(),
+      time:        new Date().toLocaleString('zh-Hant', {timeZone: 'Asia/Shanghai'}),
+      name:        document.getElementById('f_name').value.trim(),
+      gender:      document.getElementById('f_gender').value,
+      age:         document.getElementById('f_age').value,
+      phone:       document.getElementById('f_phone').value.trim(),
+      email:       document.getElementById('f_email').value.trim(),
+      height:      document.getElementById('f_height').value,
+      weight:      document.getElementById('f_weight').value,
+      goals:       getCheckedVals('#goals'),
+      exercise:    document.getElementById('f_exercise').value,
+      diet:        document.getElementById('f_diet').value,
+      meals:       document.getElementById('f_meals').value,
+      allergies:   [],
+      supplements: [],
+      note:        document.getElementById('f_note').value.trim(),
+    };
+
+    const allergyVals = ['allergy_gluten','allergy_lactose','allergy_nuts','allergy_seafood','allergy_eggs','allergy_none'];
+    const suppVals    = ['supp_protein','supp_vitamins','supp_fish_oil','supp_creatine','supp_none'];
+    document.querySelectorAll('.checkbox-item input[type="checkbox"]:checked').forEach(cb => {
+      if (allergyVals.includes(cb.value)) record.allergies.push(cb.value);
+      if (suppVals.includes(cb.value))    record.supplements.push(cb.value);
+    });
+
+    const submitBtn = document.querySelector('.submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ 處理中...';
+    submitBtn.disabled = true;
+
+    try {
+      // 使用 Modular SDK 寫入資料
+      await addDoc(collection(db, "participants"), record);
+
+      document.getElementById('regForm').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+      window.scrollTo({ top: document.querySelector('.register-section').offsetTop - 80, behavior: 'smooth' });
+    } catch (error) {
+      console.error("寫入資料失敗: ", error);
+      alert("抱歉，系統發生錯誤，請檢查資料庫權限或稍後再試！");
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
+    }
+  }
+
+  // ======================================================
+  // QR CODE & IMAGE DOWNLOAD
+  // ======================================================
+  window.addEventListener('load', () => {
+    const url = window.location.href.split('#')[0];
+    document.getElementById('qr-url').textContent = url;
+    new QRCode(document.getElementById('qrcode'), {
+      text: url, width: 200, height: 200,
+      colorDark: '#1a1a2e', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    applyTranslations();
+  });
+
+  function downloadQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) { alert('QR Code loading, please wait.'); return; }
+    const link = document.createElement('a');
+    link.download = 'FitZone_QRCode.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+
+  function copyURL() {
+    const url = window.location.href.split('#')[0];
+    navigator.clipboard.writeText(url).then(() => alert('✅ ' + (currentLang === 'ja' ? 'URLをコピーしました！' : currentLang === 'en' ? 'URL copied!' : '網址已複製！')));
+  }
+
+  function forceDownload(event, url, filename) {
+    event.preventDefault();
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch(() => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.target = '_blank';
+        a.click();
+      });
+  }
+
+  // ======================================================
+  // ADMIN MODAL
+  // ======================================================
+  function openAdmin() {
+    document.getElementById('adminModal').classList.add('active');
+    setTimeout(() => document.getElementById('pwInput').focus(), 100);
+  }
+  function closeAdmin() {
+    document.getElementById('adminModal').classList.remove('active');
+    document.getElementById('adminLogin').style.display = 'block';
+    document.getElementById('adminDash').style.display = 'none';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwErr').textContent = '';
+  }
+
+  function checkPW() {
+    if (document.getElementById('pwInput').value === ADMIN_PW) {
+      document.getElementById('adminLogin').style.display = 'none';
+      document.getElementById('adminDash').style.display = 'block';
+      loadDashboard();
+    } else {
+      document.getElementById('pwErr').textContent = t('admin_error_password');
+    }
+  }
+
+  async function loadDashboard() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">⏳ 載入資料中...</div></td></tr>`;
+
+    try {
+      // 使用 Modular SDK 讀取資料 (排序)
+      const q = query(collection(db, "participants"), orderBy("id", "desc"));
+      const snapshot = await getDocs(q);
+      const data = [];
+      snapshot.forEach(doc => {
+        data.push(doc.data());
+      });
+      
+      cachedData = data;
+
+      const goals = {}, diets = {};
+      data.forEach(d => {
+        if (d.goals) d.goals.forEach(g => { goals[g] = (goals[g]||0)+1; });
+        if (d.diet) diets[d.diet] = (diets[d.diet]||0)+1;
+      });
+      const topGoal = Object.entries(goals).sort((a,b)=>b[1]-a[1])[0];
+      const topDiet = Object.entries(diets).sort((a,b)=>b[1]-a[1])[0];
+
+      document.getElementById('statCards').innerHTML = `
+        <div class="stat-card"><div class="num">${data.length}</div><div class="lbl">${t('stat_total')}</div></div>
+        <div class="stat-card"><div class="num" style="font-size:1.1rem">${topGoal ? t(topGoal[0]) : '-'}</div><div class="lbl">${t('stat_top_goal')}</div></div>
+        <div class="stat-card"><div class="num" style="font-size:1.1rem">${topDiet ? t(topDiet[0]) : '-'}</div><div class="lbl">${t('stat_top_diet')}</div></div>
+        <div class="stat-card"><div class="num">${data.filter(d=>d.gender==='male').length}</div><div class="lbl">${t('stat_male_count')}</div></div>
+        <div class="stat-card"><div class="num">${data.filter(d=>d.gender==='female').length}</div><div class="lbl">${t('stat_female_count')}</div></div>
+      `;
+
+      ['th_index','th_name','th_gender','th_age','th_phone','th_height_weight','th_goals','th_diet_type','th_allergies','th_notes','th_registered_at'].forEach((key,i) => {
+        const ths = document.querySelectorAll('#dataTable thead th');
+        if (ths[i]) ths[i].textContent = t(key);
+      });
+
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">${t('empty_data')}</div></td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = data.map((r,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td><strong>${r.name}</strong><br><small style="color:#999">${r.email||''}</small></td>
+          <td>${t(r.gender) || r.gender}</td>
+          <td>${r.age}</td>
+          <td>${r.phone}</td>
+          <td>${r.height}cm / ${r.weight}kg</td>
+          <td>${(r.goals||[]).map(g=>`<span class="tag tag-goal">${t(g)||g}</span>`).join('')}</td>
+          <td><span class="tag tag-diet">${t(r.diet)}</span><br><small>${t(r.meals)||''}</small></td>
+          <td>${(r.allergies||[]).map(a=>`<span class="tag tag-allergy">${t(a)||a}</span>`).join('')}</td>
+          <td style="max-width:160px;font-size:0.8rem">${r.note||'-'}</td>
+          <td style="font-size:0.78rem;color:#999;white-space:nowrap">${r.time}</td>
+        </tr>
+      `).join('');
+
+    } catch (error) {
+      console.error("讀取資料失敗: ", error);
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state" style="color:var(--red);">❌ 讀取資料失敗，請檢查網路或資料庫權限</div></td></tr>`;
+    }
+  }
+
+  // ======================================================
+  // EXPORT CSV
+  // ======================================================
+  function exportCSV() {
+    const data = cachedData;
+    if (!data.length) { alert(t('empty_data')); return; }
+    const headers = [t('th_index'),t('th_name'),t('th_gender'),t('th_age'),t('th_phone'),
+      'Email',t('label_height')+'(cm)',t('label_weight')+'(kg)',
+      t('th_goals'),t('label_exercise_freq'),t('th_diet_type'),t('label_meals_per_day'),
+      t('th_allergies'),t('label_supplements'),t('th_notes'),t('th_registered_at')];
+    
+    const rows = data.map((r,i) => [
+      i+1, r.name, t(r.gender), r.age, r.phone, r.email,
+      r.height, r.weight,
+      (r.goals||[]).map(g=>t(g)).join('、'),
+      t(r.exercise),
+      t(r.diet),
+      t(r.meals),
+      (r.allergies||[]).map(a=>t(a)).join('、'),
+      (r.supplements||[]).map(s=>t(s)).join('、'),
+      r.note, r.time
+    ]);
+    
+    const csv = [headers,...rows].map(row => row.map(c=>`"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `FitZone_${new Date().toLocaleDateString()}.csv`;
+    link.click();
+  }
+
+  // ======================================================
+  // 將模組內的函式綁定到全域變數 (供 HTML onclick 呼叫)
+  // ======================================================
+  window.setLang = setLang;
+  window.submitForm = submitForm;
+  window.downloadQR = downloadQR;
+  window.copyURL = copyURL;
+  window.forceDownload = forceDownload;
+  window.openAdmin = openAdmin;
+  window.closeAdmin = closeAdmin;
+  window.checkPW = checkPW;
+  window.exportCSV = exportCSV;
+
+</script>
+</body>
+</html>
